@@ -1,45 +1,148 @@
-version: "3.8"
-
-secrets:
-  openvpn_user:
-    file: ./secrets/openvpn_user.secret
-  openvpn_password:
-    file: ./secrets/openvpn_password.secret
-
 services:
   gluetun:
     image: qmcgaw/gluetun:latest
     container_name: gluetun
-    restart: always
     cap_add:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=private internet access
+      - VPN_TYPE=openvpn
+      # Load OpenVPN creds from Docker secrets (files)
+      - FILE__OPENVPN_USER=/run/secrets/openvpn_user
+      - FILE__OPENVPN_PASSWORD=/run/secrets/openvpn_password
+
+      # Pick a PIA region that supports port-forwarding if you care about seeding
+      - SERVER_REGIONS=${PIA_REGION}
+
+      # Let LAN reach the WebUI through gluetun's firewall
+      - FIREWALL_OUTBOUND_SUBNETS=${LAN_SUBNET}
+
+      - TZ=${TZ}
+    ports:
+      # qBittorrent WebUI (qbit runs "inside" gluetun network namespace)
+      - 8080:8080
+      # Torrent listen ports (match what you set inside qBittorrent)
+      - 6881:6881/tcp
+      - 6881:6881/udp
+    volumes:
+      - ${DATA_DIR}/config/gluetun:/gluetun
     secrets:
       - openvpn_user
       - openvpn_password
-    env_file: ./env/gluetun.env
-    volumes:
-      - gluetun:/gluetun
+    restart: unless-stopped
+    networks:
+      - media_network
 
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: watchtower
-    restart: always
-    env_file: ./env/watchtower.env
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=8080
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR}/config/qbittorrent:/config
+      - ${DATA_DIR}/downloads:/downloads
+    restart: unless-stopped
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    ports:
+      - 9696:9696
+    volumes:
+      - ${DATA_DIR}/config/prowlarr:/config
+    restart: unless-stopped
+    networks:
+      - media_network
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    ports:
+      - 8989:8989
+    volumes:
+      - ${DATA_DIR}/config/sonarr:/config
+      - ${DATA_DIR}/downloads:/downloads
+      - ${DATA_DIR}/media/tv:/tv
+    restart: unless-stopped
+    networks:
+      - media_network
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    ports:
+      - 7878:7878
+    volumes:
+      - ${DATA_DIR}/config/radarr:/config
+      - ${DATA_DIR}/downloads:/downloads
+      - ${DATA_DIR}/media/movies:/movies
+    restart: unless-stopped
+    networks:
+      - media_network
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    ports:
+      - 5055:5055
+    volumes:
+      - ${DATA_DIR}/config/overseerr:/config
+    restart: unless-stopped
+    networks:
+      - media_network
+    depends_on:
+      - sonarr
+      - radarr
+
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - VERSION=docker
+      # Optional: set PLEX_CLAIM the first time only
+      # - PLEX_CLAIM=claim-xxxxxxxxxxxxxxxxxxxx
+    ports:
+      - 32400:32400
+    volumes:
+      - ${DATA_DIR}/config/plex:/config
+      - ${DATA_DIR}/media:/media
+    restart: unless-stopped
+    networks:
+      - media_network
+
+secrets:
+  openvpn_user:
+    file: ${SECRETS_DIR}/openvpn_user.secret
+  openvpn_password:
+    file: ${SECRETS_DIR}/openvpn_password.secret
 
 networks:
-  default:
-    name: media_network
+  media_network:
     driver: bridge
-    attachable: true
-
-volumes:
-  gluetun:
-    driver: local
-    driver_opts:
-      type: "nfs"
-      o: "addr=${NFS_SERVER},rw,tcp,nolock,hard,wsize=65536,rsize=65536"
-      device: ":${NFS_VOLUME}/docker_data/gluetun"
