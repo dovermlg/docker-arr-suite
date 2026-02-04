@@ -119,22 +119,23 @@ services:
       - radarr
 
   plex:
-  image: lscr.io/linuxserver/plex:latest
-  container_name: plex
-  environment:
-    - PUID=${PUID}
-    - PGID=${PGID}
-    - TZ=${TZ}
-    - VERSION=docker
-    - PLEX_CLAIM=${PLEX_CLAIM}
-  ports:
-    - 32400:32400
-  volumes:
-    - ${DATA_DIR}/config/plex:/config
-    - ${DATA_DIR}/media:/media
-  restart: unless-stopped
-  networks:
-    - media_network
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - VERSION=docker
+      - PLEX_CLAIM=${PLEX_CLAIM}
+    ports:
+      - "32400:32400"
+    volumes:
+      - ${DATA_DIR}/config/plex:/config
+      - ${DATA_DIR}/media:/media
+    restart: unless-stopped
+    networks:
+      - media_network
+
 
 
 secrets:
