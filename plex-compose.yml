@@ -3,6 +3,7 @@
 # Before deployment, reserve 192.168.1.89 for this Ubuntu server and create
 # /opt/arr-stack/config/plex-fresh and /opt/arr-stack/transcode with UID/GID 1000 ownership.
 # Keep UniFi TCP 32400 port forwarding DISABLED during incident recovery.
+# A LAN-IP Docker bind alone cannot block router NAT/forwarding.
 # A new bridge-mode Plex server may require a one-time PLEX_CLAIM value.
 # Provide PLEX_CLAIM in Portainer's stack environment (never commit a token to Git).
 services:

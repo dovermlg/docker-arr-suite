@@ -1,5 +1,7 @@
 # Automated Media Management Setup
 
+> **SECURITY NOTICE:** Before deploying, review [SECURITY.md](SECURITY.md). This repository is public and historically included files under `secrets/*.secret`. These files are removed from the current proposed branch, but earlier Git history may still expose their values. Rotate any real credentials and do not commit secrets. The live Portainer media stack uses `docker-compose.yml`; `plex-compose.yml` is a separate stack. Other Compose files are legacy/alternative examples and must not be deployed as-is for this setup.
+
 After years of trial, error, and endless Reddit dives, I built the guide I wish I had from the start—a clear, step-by-step walkthrough to fully automate your seedbox in a secure, reliable way. Whether you're new or a seasoned tweaker, this will streamline your media setup from start to finish.
 
 Below is a quick overview of the Docker containers used and what each one does.

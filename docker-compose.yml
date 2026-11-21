@@ -1,3 +1,6 @@
+# Security: reserve 192.168.1.89 for the Ubuntu VM before deploying.
+# Host port binds limit exposure to the VM's LAN IPv4 interface; UniFi WAN
+# port forwards, UPnP, and IPv6 must still be checked separately.
 services:
   gluetun:
     image: qmcgaw/gluetun:latest
@@ -16,16 +19,17 @@ services:
       # Pick a PIA region that supports port-forwarding if you care about seeding
       - SERVER_REGIONS=${PIA_REGION}
 
-      # Let LAN reach the WebUI through gluetun's firewall
+      # Review LAN_SUBNET: this creates an exception for outbound LAN destinations.
+      # Keep it as narrow as practical; it is NOT a VPN/WAN access control.
       - FIREWALL_OUTBOUND_SUBNETS=${LAN_SUBNET}
 
       - TZ=${TZ}
     ports:
       # qBittorrent WebUI (qbit runs "inside" gluetun network namespace)
-      - 8080:8080
+      - "192.168.1.89:8080:8080/tcp"
       # Torrent listen ports (match what you set inside qBittorrent)
-      - 6881:6881/tcp
-      - 6881:6881/udp
+      - "192.168.1.89:6881:6881/tcp"
+      - "192.168.1.89:6881:6881/udp"
     volumes:
       - ${DATA_DIR}/config/gluetun:/gluetun
     secrets:
@@ -61,7 +65,7 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     ports:
-      - 9696:9696
+      - "192.168.1.89:9696:9696/tcp"
     volumes:
       - ${DATA_DIR}/config/prowlarr:/config
     restart: unless-stopped
@@ -76,7 +80,7 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     ports:
-      - 8989:8989
+      - "192.168.1.89:8989:8989/tcp"
     volumes:
       - ${DATA_DIR}/config/sonarr:/config
       - ${DATA_DIR}/downloads:/downloads
@@ -93,7 +97,7 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     ports:
-      - 7878:7878
+      - "192.168.1.89:7878:7878/tcp"
     volumes:
       - ${DATA_DIR}/config/radarr:/config
       - ${DATA_DIR}/downloads:/downloads
@@ -110,7 +114,7 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
     ports:
-      - 5055:5055
+      - "192.168.1.89:5055:5055/tcp"
     volumes:
       - ${DATA_DIR}/config/overseerr:/config
     restart: unless-stopped
