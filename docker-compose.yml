@@ -18,6 +18,8 @@ services:
       - OPENVPN_ENDPOINT_PORT=8443
       - OPENVPN_FLAGS=--connect-retry-max 1 --server-poll-timeout 20
       - SERVER_SELECTION_MODE=ordered
+      # Refresh PIA server data every 20 days; retain the known-good endpoint until automatic selection is validated.
+      - UPDATER_PERIOD=480h
       # Load OpenVPN creds from Docker secrets (files)
       - FILE__OPENVPN_USER=/run/secrets/openvpn_user
       - FILE__OPENVPN_PASSWORD=/run/secrets/openvpn_password
