@@ -13,6 +13,8 @@ services:
       - VPN_SERVICE_PROVIDER=private internet access
       - VPN_TYPE=openvpn
       - OPENVPN_PROTOCOL=tcp
+      - OPENVPN_FLAGS=--connect-retry-max 1 --server-poll-timeout 20
+      - SERVER_SELECTION_MODE=ordered
       # Load OpenVPN creds from Docker secrets (files)
       - FILE__OPENVPN_USER=/run/secrets/openvpn_user
       - FILE__OPENVPN_PASSWORD=/run/secrets/openvpn_password
