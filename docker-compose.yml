@@ -40,7 +40,9 @@ services:
     container_name: qbittorrent
     network_mode: "service:gluetun"
     depends_on:
-      - gluetun
+      gluetun:
+        condition: service_healthy
+        restart: true
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -94,3 +96,36 @@ services:
       - 7878:7878
     volumes:
       - ${DATA_DIR}/config/radarr:/config
+      - ${DATA_DIR}/downloads:/downloads
+      - ${DATA_DIR}/media/movies:/movies
+    restart: unless-stopped
+    networks:
+      - media_network
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    ports:
+      - 5055:5055
+    volumes:
+      - ${DATA_DIR}/config/overseerr:/config
+    restart: unless-stopped
+    networks:
+      - media_network
+    depends_on:
+      - sonarr
+      - radarr
+
+secrets:
+  openvpn_user:
+    file: ${SECRETS_DIR}/openvpn_user.secret
+  openvpn_password:
+    file: ${SECRETS_DIR}/openvpn_password.secret
+
+networks:
+  media_network:
+    driver: bridge
