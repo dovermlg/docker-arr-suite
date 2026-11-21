@@ -1,0 +1,8 @@
+# Never track credentials or local environment overrides.
+secrets/*.secret
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+# NOTE: gitignore does not untrack files already committed or erase Git history.

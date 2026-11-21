@@ -1,8 +1,11 @@
-# Deploy as a separate Portainer Git stack using plex-compose.yml.
-# Keep the old /opt/arr-stack/config/plex directory untouched for investigation.
-# Before deployment: mkdir -p /opt/arr-stack/config/plex-fresh /opt/arr-stack/transcode
-# and ensure the container user (UID/GID 1000) can write its config/transcode dirs.
-# Keep the UniFi/WAN port-forward for TCP 32400 disabled.
+# Separate Plex stack for recovery after a suspected compromised Plex installation.
+# DO NOT reuse /opt/arr-stack/config/plex; preserve its contents for investigation.
+# Before deployment, reserve 192.168.1.89 for this Ubuntu server and create
+# /opt/arr-stack/config/plex-fresh and /opt/arr-stack/transcode with UID/GID 1000 ownership.
+# Keep UniFi TCP 32400 port forwarding DISABLED during incident recovery.
+# A LAN-IP Docker bind alone cannot block router NAT/forwarding.
+# A new bridge-mode Plex server may require a one-time PLEX_CLAIM value.
+# Provide PLEX_CLAIM in Portainer's stack environment (never commit a token to Git).
 services:
   plex:
     image: lscr.io/linuxserver/plex:latest
@@ -13,9 +16,10 @@ services:
       - PGID=1000
       - TZ=America/Chicago
       - VERSION=docker
+      - PLEX_CLAIM=${PLEX_CLAIM:-}
+      - ADVERTISE_IP=http://192.168.1.89:32400/
     ports:
-      # LAN access only if your router does not forward this port from the internet.
-      - "32400:32400/tcp"
+      - "192.168.1.89:32400:32400/tcp"
     volumes:
       - /opt/arr-stack/config/plex-fresh:/config
       - /opt/arr-stack/media:/media:ro
@@ -28,4 +32,3 @@ services:
 networks:
   plex_network:
     driver: bridge
-
