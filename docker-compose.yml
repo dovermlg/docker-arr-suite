@@ -3,7 +3,7 @@
 # port forwards, UPnP, and IPv6 must still be checked separately.
 services:
   gluetun:
-    image: qmcgaw/gluetun:latest
+    image: qmcgaw/gluetun:v3.41.3
     container_name: gluetun
     cap_add:
       - NET_ADMIN
